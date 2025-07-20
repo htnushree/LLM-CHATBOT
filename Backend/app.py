@@ -12,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app) # Enable CORS for frontend communication
 
-# Check for Google API Key
+# Google API Key
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not found. Please set it in the .env file.")
 
@@ -48,7 +48,7 @@ def upload_file():
     if not file or not file.filename.endswith('.pdf'):
         return jsonify({"error": "Invalid file type. Please upload a PDF."}), 400
 
-    # --- THIS IS THE NEW ERROR HANDLING BLOCK ---
+    
     try:
         filename = secure_filename(file.filename)
         # Ensure the documents directory exists
@@ -73,7 +73,7 @@ def upload_file():
         return jsonify({"error": "An internal error occurred while processing the PDF. Please check the backend console for details."}), 500
     # --- END OF ERROR HANDLING BLOCK ---
 
-# In backend/app.py
+
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
