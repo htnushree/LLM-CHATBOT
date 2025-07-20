@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # --- NEW DEBUGGING STEP ---
+          
           # List all files recursively to see the directory structure
           ls -R
           # --------------------------
