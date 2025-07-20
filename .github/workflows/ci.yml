@@ -1,50 +1,43 @@
-# This is the name of the workflow that will appear on GitHub
+# .github/workflows/ci.yml
+
 name: Python and Docker CI
 
-# This section defines when the workflow runs.
-# It runs on any push or pull request to the "main" branch.
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-# This section defines the jobs to be run.
 jobs:
-  # We have a single job named "build"
   build:
-    # The job runs on the latest version of Ubuntu
     runs-on: ubuntu-latest
 
-    # These are the steps the job will execute in order
     steps:
-      # Step 1: Checks out your repository's code onto the runner
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      # Step 2: Sets up the specific version of Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Step 3: Installs Python dependencies
       - name: Install dependencies
         run: |
+          # --- NEW DEBUGGING STEP ---
+          # List all files recursively to see the directory structure
+          ls -R
+          # --------------------------
+          
           python -m pip install --upgrade pip
           pip install flake8
-          # Make sure the path "Backend" matches the case in your repository
           pip install -r Backend/requirements.txt
 
-      # Step 4: Checks the code for common style issues
       - name: Lint with flake8
         run: |
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      # Step 5: Builds the Docker images to ensure they are valid
       - name: Build the Docker images
-        # This 'env' block makes your GitHub Secret available to the command
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: docker compose build
