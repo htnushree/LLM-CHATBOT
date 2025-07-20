@@ -1,8 +1,6 @@
-# In docker-compose.yml
-
 services:
   backend:
-    build: ./Backend  
+    build: ./Backend
     ports:
       - "5001:5000"
     volumes:
@@ -11,7 +9,7 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
 
   frontend:
-    build: ./frontend
+    build: ./Frontend
     ports:
       - "8080:80"
     depends_on:
