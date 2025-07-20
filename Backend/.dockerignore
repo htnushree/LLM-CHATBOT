@@ -1,0 +1,13 @@
+# .dockerignore
+
+# Ignore python cache
+__pycache__/
+*.pyc
+
+# Ignore virtual environment folders
+.venv/
+venv/
+
+# Ignore local data and index folders
+documents/
+faiss_index/

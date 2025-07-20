@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Python cache and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment folders
+.venv
+venv/
+
+# Local data and index files
+# We don't want to commit the PDF data or the large index files
+documents/
+faiss_index/

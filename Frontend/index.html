@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chatbot</title>
+    <style>
+        /* CSS styles are unchanged */
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .chat-container { width: 100%; max-width: 700px; height: 90vh; max-height: 800px; display: flex; flex-direction: column; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .chat-header { padding: 15px 20px; background-color: #4A90E2; color: white; text-align: center; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header h1 { margin: 0; font-size: 1.5rem; }
+        .chat-header p { margin: 4px 0 0; font-size: 0.8rem; opacity: 0.9; }
+        .summarize-btn { background-color: #ffffff; color: #4A90E2; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .summarize-btn:hover { background-color: #f0f2f5; }
+        .summarize-btn:disabled { background-color: #e9e9eb; color: #999; cursor: not-allowed; }
+        .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .message { display: flex; flex-direction: column; width: 100%; }
+        .message-bubble { max-width: 75%; padding: 12px 18px; border-radius: 20px; line-height: 1.5; word-wrap: break-word; }
+        .bot-message { align-items: flex-start; }
+        .bot-message .message-bubble { background-color: #E9E9EB; color: #333; border-top-left-radius: 5px; }
+        .user-message { align-items: flex-end; }
+        .user-message .message-bubble { background-color: #4A90E2; color: white; border-top-right-radius: 5px; }
+        .chat-input { display: flex; padding: 15px; border-top: 1px solid #ddd; background-color: #f9f9f9; }
+        .chat-input input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+        .chat-input input:focus { border-color: #4A90E2; }
+        .chat-input button { margin-left: 10px; padding: 12px 20px; border: none; background-color: #4A90E2; color: white; border-radius: 20px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        .chat-input button:hover { background-color: #357ABD; }
+        .upload-section { padding: 15px; border-top: 1px solid #ddd; background-color: #f9f9f9; display: flex; align-items: center; gap: 10px; }
+        .upload-section input[type="file"] { display: none; }
+        .upload-section .file-label { flex-grow: 1; padding: 10px 15px; background-color: #e9e9eb; border-radius: 5px; font-size: 0.9rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .upload-section .upload-btn { padding: 10px 20px; border: none; background-color: #34A853; color: white; border-radius: 20px; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s; }
+        .upload-section .upload-btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .upload-status { font-size: 0.8rem; color: #555; text-align: center; padding: 5px; background-color: #f0f2f5; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div>
+                <h1>LLM Chatbot</h1>
+                
+            </div>
+            <div class="header-controls">
+                <button class="summarize-btn" id="summarize-btn">✨ Summarize</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="upload-status" id="upload-status"></div>
+        <div class="upload-section">
+            <label for="pdf-upload-input" class="file-label" id="file-label">Choose a PDF to add...</label>
+            <input type="file" id="pdf-upload-input" accept=".pdf">
+            <button class="upload-btn" id="upload-btn">Upload</button>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message here..." aria-label="Chat message input">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const summarizeButton = document.getElementById('summarize-btn');
+        const uploadInput = document.getElementById('pdf-upload-input');
+        const uploadButton = document.getElementById('upload-btn');
+        const fileLabel = document.getElementById('file-label');
+        const uploadStatus = document.getElementById('upload-status');
+        
+        // --- API Configuration ---
+        // ⬇️ *** PASTE YOUR KEY HERE FOR THE "SUMMARIZE" FEATURE *** ⬇️
+        const GEMINI_API_KEY = ""; 
+        const RAG_API_URL = 'http://127.0.0.1:5001/api/chat';
+        const UPLOAD_API_URL = 'http://127.0.0.1:5001/api/upload';
+        
+        let conversationHistory = [];
+
+        // --- Functions ---
+        function addMessage(sender, text) {
+            const messageElement = document.createElement('div');
+            const messageClass = sender === 'user' ? 'user-message' : 'bot-message';
+            messageElement.classList.add('message', messageClass);
+            const bubbleElement = document.createElement('div');
+            bubbleElement.classList.add('message-bubble');
+            bubbleElement.textContent = text;
+            messageElement.appendChild(bubbleElement);
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function handleSendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText) return;
+            addMessage('user', messageText);
+            messageInput.value = '';
+
+            try {
+                const response = await fetch(RAG_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: messageText }),
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    // This will now display the specific error from the backend
+                    throw new Error(result.error || `Server error: ${response.status}`);
+                }
+                addMessage('bot', result.reply);
+                conversationHistory.push({role: 'User', text: messageText});
+                conversationHistory.push({role: 'Bot', text: result.reply});
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessage('bot', `Sorry, an error occurred: ${error.message}`);
+            }
+        }
+
+        async function handleUpload() {
+            const file = uploadInput.files[0];
+            if (!file) {
+                uploadStatus.textContent = 'Please select a file first.';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            uploadStatus.textContent = `Uploading ${file.name}...`;
+            uploadButton.disabled = true;
+
+            try {
+                const response = await fetch(UPLOAD_API_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Upload failed');
+                }
+                uploadStatus.textContent = result.message;
+                addMessage('bot', `I have now learned the contents of ${file.name}. You can ask me questions about it.`);
+            } catch (error) {
+                console.error('Upload error:', error);
+                uploadStatus.textContent = `Error: ${error.message}`;
+            } finally {
+                uploadButton.disabled = false;
+                uploadInput.value = '';
+                fileLabel.textContent = 'Choose a PDF to add...';
+            }
+        }
+        
+        async function handleSummarize() {
+            if (conversationHistory.length < 2) {
+                addMessage('bot', "There isn't enough conversation to summarize yet.");
+                return;
+            }
+            // Logic to call Gemini API for summarization would go here
+            // This feature is disabled by default if no API key is provided
+            addMessage('bot', "Summarization feature requires a valid API key in the script.");
+        }
+
+        // --- Event Listeners ---
+        sendButton.addEventListener('click', handleSendMessage);
+        messageInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') handleSendMessage();
+        });
+        uploadInput.addEventListener('change', () => {
+            fileLabel.textContent = uploadInput.files.length > 0 ? uploadInput.files[0].name : 'Choose a PDF to add...';
+        });
+        uploadButton.addEventListener('click', handleUpload);
+        summarizeButton.addEventListener('click', handleSummarize);
+        
+        // --- Initial Setup ---
+        if (!GEMINI_API_KEY) {
+            summarizeButton.disabled = true;
+            summarizeButton.title = "A Gemini API Key is required for this feature.";
+        }
+        addMessage('bot', 'Hello! To get started, please upload a PDF document using the form below.');
+    </script>
+</body>
+</html>
