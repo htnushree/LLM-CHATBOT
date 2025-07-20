@@ -75,10 +75,13 @@ def upload_file():
 
 
 
+# In Backend/app.py
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     """Handles chat messages by passing them to the RAG handler."""
-    global rag_handler
+    # The "global rag_handler" line was removed from here
+    
     # If the handler isn't loaded in this worker, try to load it.
     if rag_handler is None:
         print("RAG handler not found in this worker, attempting to initialize...")
