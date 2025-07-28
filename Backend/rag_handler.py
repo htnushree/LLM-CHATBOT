@@ -25,7 +25,7 @@ class RAGHandler:
             allow_dangerous_deserialization=True 
         )
         
-        # Use a current, valid model name like "gemini-1.5-flash"
+
         llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
         
         self.qa_chain = RetrievalQA.from_chain_type(
